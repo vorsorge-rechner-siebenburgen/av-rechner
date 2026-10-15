@@ -2,7 +2,7 @@
 
 Interaktiver Rechner für die Beratung zur **Altersvorsorge-Reform 2027**. Er zeigt, was aus einem Monatsbeitrag mit den Zulagen vom Staat und dem Zinseszins bis zur Rente werden kann. Optik wie die Story-Slides: türkiser Kopf, Fraunces und Figtree, Farben der Zinseszins-Slide.
 
-**Online:** https://currypulver.github.io/av-rechner/
+**Online:** https://vorsorge-rechner-siebenburgen.github.io/av-rechner/
 
 ![Vorschau](assets/vorschau.png)
 
@@ -80,7 +80,7 @@ Bitte prüf, ob ERGO für Renditebeispiele in der Werbung feste Sätze vorgibt. 
 
 ## Veröffentlichen und aktualisieren
 
-Der Rechner wird im privaten Repo **AV-NEU** im Ordner `rechner/` gepflegt. Der Inhalt dieses Ordners liegt außerdem im öffentlichen Repo **av-rechner** auf `main`, und GitHub Pages liefert ihn von dort aus.
+Der Rechner wird im privaten Repo **AV-NEU** im Ordner `rechner/` gepflegt. Der Inhalt dieses Ordners liegt außerdem im öffentlichen Repo [**vorsorge-rechner-siebenburgen/av-rechner**](https://github.com/vorsorge-rechner-siebenburgen/av-rechner) auf `main`, und GitHub Pages liefert ihn von dort aus.
 
 - **Einmalig:** av-rechner → Settings → Pages → „Deploy from a branch“ → Branch `main`, Ordner `/ (root)` → Save
 - **Nach Änderungen:** den Inhalt von `rechner/` wieder nach av-rechner `main` übertragen. Nach etwa einer Minute ist die neue Version online.
