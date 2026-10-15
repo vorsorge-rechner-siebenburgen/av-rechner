@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Altersvorsorge-Rechner</title>
+<meta name="description" content="Zeit × Geld × Zinseszins: Rechne aus, was aus deinem Monatsbeitrag mit den Zulagen der Altersvorsorge-Reform 2027 bis zur Rente werden kann.">
+<meta property="og:title" content="Was aus deinem Geld werden kann">
+<meta property="og:description" content="Deine persönliche Modellrechnung zur Altersvorsorge-Reform 2027: Beitrag, Zulagen vom Staat und Zinseszins.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#00606E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2300606E'/%3E%3Cpath d='M8 22l5-6 4 3 7-9' fill='none' stroke='%23A9DAE0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/Figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="rechner.css">
+<script>
+  // ════════════════════════════════════════════════════════════════════════
+  //  Alles, was du anpassen willst, steht hier.
+  // ════════════════════════════════════════════════════════════════════════
+  window.RECHNER = {
+    // ► Kontakt (wie in story/slides.html). Name leer = Kontaktkarte ohne Namen.
+    PROFIL: {
+      name: 'Ludwig Siebenbürgen',
+      rolle: 'Dein Ansprechpartner für Altersvorsorge',
+      telefon: '0152 24827997',
+      whatsapp: '4915224827997',   // internationale Schreibweise ohne + (für wa.me und tel:)
+      stichwort: 'RENTE',          // wird im WhatsApp-Chat vorausgefüllt
+      foto: 'assets/avatar.jpg',
+    },
+    // ► Persönlicher ERGO-Link (Button „Förderung beim ERGO-Rechner prüfen“)
+    LINK: 'https://start.ergo.de/altersvorsorge-reform?pp-pnr=0694815',
+    // ► Öffentliche Adresse dieses Rechners. Wird für geteilte Links verwendet, wenn die Seite lokal geöffnet ist.
+    OEFFENTLICHE_URL: 'https://currypulver.github.io/av-rechner/',
+    // ► ERGO oben rechts. Leer = Schriftzug „ERGO“; für das offizielle Logo z. B. 'assets/ergo-logo.svg'.
+    ERGO_LOGO: '',
+
+    // ► Anlage-Profile: typische Werte für Altersvorsorge-Anlagen (Wertentwicklung p. a. vor Kosten)
+    ANLAGE_PROFILE: [
+      { id: 'garantie',     name: 'Mit Garantie', rendite: 3,
+        text: 'Mit Garantie: weniger Schwankung, dafür meist weniger Rendite-Chance.' },
+      { id: 'ausgewogen',   name: 'Ausgewogen',   rendite: 5,
+        text: 'Ausgewogen: eine Mischung aus sicheren Anlagen und Aktienfonds.' },
+      { id: 'aktien',       name: 'Aktienfonds',  rendite: 7,
+        text: 'Aktienfonds: etwa der langfristige Schnitt breit gestreuter Aktien. Unterwegs schwankt der Wert deutlich.' },
+      { id: 'optimistisch', name: 'Optimistisch', rendite: 9, optimistisch: true,
+        text: 'Optimistisch: deutlich über dem langfristigen Durchschnitt. Nur zum Vergleich.' },
+    ],
+
+    // ► So startet der Rechner (ohne Angaben im Link)
+    STANDARD: {
+      alter: 30,
+      rente: 67,
+      beitrag: 50,
+      profil: 'aktien',
+      eigeneRendite: 6,   // für „Eigene“
+      kosten: 1.0,        // % p. a.
+      inflation: 2.0,     // % p. a., nur für die Zeile „Kaufkraft heute“
+    },
+
+    // ► Förderung – nur eintragen, was vom Standard in rechnung.js abweichen soll, z. B. { startbonus: 200 }
+    FOERDERUNG: {},
+  };
+</script>
+<script src="vendor/chart.umd.min.js" defer></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+
+<!-- Icons (Stil wie in der Story) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-kalender" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <path d="M12 5.5v13M5.5 12h13"/>
+    </symbol>
+    <symbol id="i-haken" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7.5"/>
+    </symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round">
+      <path d="M4.5 4.5h15A1.5 1.5 0 0 1 21 6v9.5a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17h-1A1.5 1.5 0 0 1 3 15.5V6a1.5 1.5 0 0 1 1.5-1.5z"/>
+    </symbol>
+    <symbol id="i-funkeln" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M10 2.5l2.1 6.1 6.1 2.1-6.1 2.1L10 19l-2.1-6.2-6.1-2.1 6.1-2.1z"/>
+      <path d="M18.5 14l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/>
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>
+    </symbol>
+    <symbol id="i-praesentieren" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>
+    </symbol>
+    <symbol id="i-telefon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round">
+      <path d="M5.5 3.5h3l1.6 4.2-2.2 1.5a11.5 11.5 0 0 0 6.9 6.9l1.5-2.2 4.2 1.6v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3.5 5.5a2 2 0 0 1 2-2z"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <path d="M7 7l10 10M17 7L7 17"/>
+    </symbol>
+    <symbol id="i-pfeil-hoch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5M6 11l6-6 6 6"/>
+    </symbol>
+    <symbol id="i-pfeil-rechts" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12h15M13 6l6 6-6 6"/>
+    </symbol>
+    <symbol id="i-zurueck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4v4.5H9"/>
+    </symbol>
+    <symbol id="i-teilen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+      <circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9"/>
+    </symbol>
+    <symbol id="i-tabelle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M10 9.5v10"/>
+    </symbol>
+  </defs>
+</svg>
+
+<a class="skip" href="#eingaben">Zu den Eingaben</a>
+
+<div class="seite">
+  <div class="band" aria-hidden="true"><div class="deko"></div></div>
+
+  <!-- ============ Kopf ============ -->
+  <header class="kopf">
+    <div class="kopf-zeile">
+      <span class="kicker">Altersvorsorge-Reform 2027</span>
+      <span class="marke" id="marke">ERGO</span>
+    </div>
+    <h1>Was aus deinem Geld werden&nbsp;kann</h1>
+    <p class="kopf-sub">Zeit × Geld × Zinseszins: Stell deinen Beitrag ein und sieh, was Zulagen vom Staat und der Zinseszins bis zur Rente daraus machen.</p>
+    <p class="fuer" id="fuer-zeile" hidden>Persönliche Modellrechnung für <b id="fuer-name"></b></p>
+    <p class="druck-datum" id="druck-datum"></p>
+  </header>
+
+  <!-- ============ Ergebnis ============ -->
+  <section class="ergebnis karte" id="ergebnis" aria-labelledby="erg-titel">
+    <div class="erg-oben">
+      <div>
+        <h2 class="erg-label" id="erg-titel">Dein Kapital mit <span data-out="rente">67</span></h2>
+        <p class="erg-zahl"><span class="ca">≈</span><span id="erg-kapital">–</span></p>
+        <p class="erg-meta" id="erg-meta"></p>
+      </div>
+      <p class="erg-kaufkraft" id="erg-kaufkraft"></p>
+    </div>
+
+    <div class="erg-balken" id="erg-balken" aria-hidden="true">
+      <span class="seg eigen"><span>Dein Beitrag</span></span><span class="seg zulagen"><span>Zulagen</span></span><span class="seg ertrag"><span>Zinseszins</span></span>
+    </div>
+
+    <dl class="kacheln">
+      <div class="kachel">
+        <dt><i class="sw eigen"></i>Dein Beitrag</dt>
+        <dd><b id="k-eigen">–</b><span id="k-eigen-sub">eingezahlt</span></dd>
+      </div>
+      <div class="kachel">
+        <dt><i class="sw zulagen"></i>Zulagen vom Staat</dt>
+        <dd><b id="k-zulagen">–</b><span id="k-zulagen-sub"></span></dd>
+      </div>
+      <div class="kachel">
+        <dt><i class="sw ertrag"></i>Erträge aus Zinseszins</dt>
+        <dd><b id="k-ertrag">–</b><span id="k-ertrag-sub"></span></dd>
+      </div>
+      <div class="kachel">
+        <dt>Förderquote</dt>
+        <dd><b id="k-quote">–</b><span id="k-quote-sub"></span></dd>
+      </div>
+      <div class="kachel">
+        <dt>Geld-Hebel</dt>
+        <dd><b id="k-hebel">–</b><span id="k-hebel-sub"></span></dd>
+      </div>
+    </dl>
+
+    <p class="highlight" id="erg-satz"></p>
+    <p class="sr-only" id="sr-ergebnis" aria-live="polite"></p>
+  </section>
+
+  <!-- ============ Eingaben ============ -->
+  <aside class="eingaben karte" id="eingaben" aria-labelledby="ein-titel" tabindex="-1">
+    <h2 class="karte-titel" id="ein-titel">Deine Angaben</h2>
+
+    <div class="feld">
+      <div class="feld-kopf">
+        <label for="in-alter">Alter heute</label>
+        <output id="out-alter" for="in-alter"></output>
+      </div>
+      <input type="range" id="in-alter" min="16" max="60" step="1">
+      <p class="bonus-info" id="info-bonus" hidden><svg aria-hidden="true"><use href="#i-haken"/></svg><span><b>+200 € Startbonus</b>, weil du vor dem 25. Geburtstag startest</span></p>
+    </div>
+
+    <div class="feld">
+      <div class="feld-kopf">
+        <label for="in-beitrag">Monatsbeitrag</label>
+        <span class="zahl-feld"><input type="number" id="in-beitrag-zahl" min="10" max="1000" step="1" inputmode="numeric" aria-label="Monatsbeitrag in Euro"><span aria-hidden="true">€</span></span>
+      </div>
+      <input type="range" id="in-beitrag" min="10" max="300" step="5" aria-describedby="info-beitrag">
+      <div class="marken" aria-hidden="true">
+        <span style="--p: 0.0690">30 €</span>
+        <span style="--p: 0.4828">150 €</span>
+      </div>
+      <p class="feld-info" id="info-beitrag"></p>
+    </div>
+
+    <div class="feld">
+      <div class="feld-kopf">
+        <span class="label" id="lbl-kinder">Kinder mit Kindergeld</span>
+      </div>
+      <ul class="kinder" id="kinder-liste" aria-labelledby="lbl-kinder"></ul>
+      <button type="button" class="knopf-klein" id="kind-plus"><svg aria-hidden="true"><use href="#i-plus"/></svg>Kind hinzufügen</button>
+      <p class="feld-info" id="info-kinder"></p>
+    </div>
+
+    <fieldset class="feld">
+      <legend class="label">So wird dein Geld angelegt</legend>
+      <div class="pills" id="profil-pills"></div>
+      <div class="feld eigene" id="feld-eigene" hidden>
+        <div class="feld-kopf">
+          <label for="in-eigene">Eigene Wertentwicklung</label>
+          <output id="out-eigene" for="in-eigene"></output>
+        </div>
+        <input type="range" id="in-eigene" min="0" max="10" step="0.5">
+      </div>
+      <p class="feld-info" id="info-profil"></p>
+    </fieldset>
+
+    <details class="mehr" id="mehr">
+      <summary>Weitere Annahmen</summary>
+      <div class="feld">
+        <div class="feld-kopf">
+          <label for="in-rente">Rentenbeginn</label>
+          <output id="out-rente" for="in-rente"></output>
+        </div>
+        <input type="range" id="in-rente" min="63" max="70" step="1">
+      </div>
+      <div class="feld">
+        <div class="feld-kopf">
+          <label for="in-kosten">Kosten p. a.</label>
+          <output id="out-kosten" for="in-kosten"></output>
+        </div>
+        <input type="range" id="in-kosten" min="0" max="2" step="0.1">
+      </div>
+      <div class="feld">
+        <div class="feld-kopf">
+          <label for="in-inflation">Inflation p. a.</label>
+          <output id="out-inflation" for="in-inflation"></output>
+        </div>
+        <input type="range" id="in-inflation" min="0" max="4" step="0.5">
+      </div>
+      <label class="schalter">
+        <input type="checkbox" id="in-k25">
+        <span>Kinderzulage bis 25 (Kind in Ausbildung)</span>
+      </label>
+      <button type="button" class="knopf-klein leise" id="zuruecksetzen"><svg aria-hidden="true"><use href="#i-zurueck"/></svg>Alles zurücksetzen</button>
+    </details>
+  </aside>
+
+  <!-- ============ Inhalt ============ -->
+  <main class="inhalt">
+
+    <!-- Wachstum über die Zeit -->
+    <section class="karte" id="wachstum" aria-labelledby="t-wachstum">
+      <div class="karte-kopf">
+        <div>
+          <h2 class="karte-titel" id="t-wachstum">So wächst dein Geld</h2>
+          <p class="karte-sub">Jahr für Jahr: dein Beitrag, die Zulagen und die Erträge aus Zinseszins</p>
+        </div>
+        <ul class="legende" aria-label="Legende">
+          <li><i class="sw eigen"></i>Dein Beitrag</li>
+          <li><i class="sw zulagen"></i>Zulagen</li>
+          <li><i class="sw ertrag"></i>Zinseszins</li>
+        </ul>
+      </div>
+      <div class="chart chart-gross"><canvas id="c-wachstum" role="img" aria-label="Gestapeltes Flächendiagramm: Kapital nach Alter, aufgeteilt in Beitrag, Zulagen und Zinseszins"></canvas></div>
+      <div class="einsichten">
+        <p class="einsicht" id="txt-kipp"></p>
+        <p class="einsicht" id="txt-endspurt"></p>
+      </div>
+      <button type="button" class="knopf-klein leise tabelle-knopf" id="tabelle-knopf" aria-expanded="false" aria-controls="tabelle"><svg aria-hidden="true"><use href="#i-tabelle"/></svg><span>Werte als Tabelle</span></button>
+      <div class="tabelle" id="tabelle" hidden>
+        <table>
+          <thead><tr><th scope="col">Alter</th><th scope="col">Eingezahlt</th><th scope="col">Zulagen</th><th scope="col">Zinseszins</th><th scope="col">Kapital</th></tr></thead>
+          <tbody id="tabelle-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Warten kostet -->
+    <section class="karte" id="warten" aria-labelledby="t-warten">
+      <div class="karte-kopf">
+        <div>
+          <h2 class="karte-titel" id="t-warten">Warten kostet</h2>
+          <p class="karte-sub" id="warten-sub">Gleicher Beitrag, gleicher Rentenbeginn – nur später gestartet</p>
+        </div>
+      </div>
+      <div class="warten-liste" id="warten-liste"></div>
+      <p class="highlight hell" id="txt-warten"></p>
+    </section>
+
+    <!-- Anlage-Profile -->
+    <section class="karte" id="profile" aria-labelledby="t-profile">
+      <div class="karte-kopf">
+        <div>
+          <h2 class="karte-titel" id="t-profile">Anlage-Profile im Vergleich</h2>
+          <p class="karte-sub" id="profile-sub"></p>
+        </div>
+      </div>
+      <div class="profil-legende" id="profil-legende" role="radiogroup" aria-label="Anlage-Profil wählen"></div>
+      <div class="chart"><canvas id="c-profile" role="img" aria-label="Liniendiagramm: Kapital nach Alter für die Anlage-Profile"></canvas></div>
+      <p class="einsicht" id="txt-profile"></p>
+    </section>
+
+    <!-- Förderquote -->
+    <section class="karte" id="foerderquote" aria-labelledby="t-quote">
+      <div class="karte-kopf">
+        <div>
+          <h2 class="karte-titel" id="t-quote">Kleiner Beitrag, großer Zuschuss</h2>
+          <p class="karte-sub">Zulagen in Prozent deines Beitrags – je nach Monatsbeitrag</p>
+        </div>
+        <ul class="legende" id="quote-legende" aria-label="Legende"></ul>
+      </div>
+      <div class="chart"><canvas id="c-quote" role="img" aria-label="Liniendiagramm: Förderquote nach Monatsbeitrag"></canvas></div>
+      <p class="einsicht" id="txt-quote"></p>
+    </section>
+
+    <!-- Teilen + Kontakt -->
+    <div class="zweier">
+      <section class="karte teilen" id="teilen" aria-labelledby="t-teilen">
+        <h2 class="karte-titel" id="t-teilen">Rechnung verschicken</h2>
+        <div class="feld">
+          <label class="label" for="in-fuer">Persönlich für</label>
+          <input type="text" id="in-fuer" maxlength="40" placeholder="Name, z. B. Anna" autocomplete="off">
+        </div>
+        <div class="knopf-raster">
+          <button type="button" class="knopf" id="k-whatsapp"><svg aria-hidden="true"><use href="#i-chat"/></svg>Per WhatsApp senden</button>
+          <button type="button" class="knopf hell" id="k-link"><svg aria-hidden="true"><use href="#i-link"/></svg>Link kopieren</button>
+          <button type="button" class="knopf hell" id="k-pdf"><svg aria-hidden="true"><use href="#i-download"/></svg>PDF speichern</button>
+          <button type="button" class="knopf hell breit" id="k-praesi"><svg aria-hidden="true"><use href="#i-praesentieren"/></svg>Präsentieren</button>
+        </div>
+        <p class="feld-info">Der Link enthält alle Einstellungen. Wer ihn öffnet, sieht genau diese Rechnung.</p>
+      </section>
+
+      <section class="kontakt" id="kontakt" aria-labelledby="t-kontakt">
+        <div class="person">
+          <img class="avatar" id="kontakt-foto" alt="" width="96" height="96">
+          <div>
+            <h2 class="name" id="t-kontakt"></h2>
+            <p class="rolle" id="kontakt-rolle"></p>
+          </div>
+        </div>
+        <a class="cta" id="kontakt-wa" target="_blank" rel="noopener">
+          <span class="cta-zeile">Schreib mir einfach <span class="keyword" id="kontakt-stichwort">RENTE</span></span>
+          <span class="cta-wie">per WhatsApp – ich melde mich mit deiner persönlichen Rechnung</span>
+        </a>
+        <a class="tel-link" id="kontakt-tel"><svg aria-hidden="true"><use href="#i-telefon"/></svg><span>oder anrufen: <b id="kontakt-nummer"></b></span></a>
+        <a class="link-button" id="kontakt-link" target="_blank" rel="noopener">Förderung beim ERGO-Rechner prüfen<svg aria-hidden="true"><use href="#i-pfeil-rechts"/></svg></a>
+      </section>
+    </div>
+
+    <footer class="fussnote">
+      <p><b>Modellrechnung, keine Garantie.</b> Gleichbleibende Wertentwicklung pro Jahr, nach den angegebenen Kosten, vor Steuern, bei gleichbleibender Förderung. Die Wertentwicklung schwankt und kann auch negativ sein. Beiträge jeweils am Monatsende, Zulagen jeweils am Jahresende. Voraussetzung für die Zulagen: Förderberechtigung; Kinderzulage für Kinder mit Kindergeldanspruch. Ein zusätzlicher Steuervorteil ist möglich und wird individuell geprüft.</p>
+      <p><b>Förderung ab 01.01.2027</b> (Altersvorsorgereformgesetz, BGBl. I Nr. 156): Grundzulage 50 % auf die ersten 360 € und 25 % auf den Teil bis 1.800 € Eigenbeitrag im Jahr (höchstens 540 €), Kinderzulage bis 300 € je Kind und Jahr, Mindestbeitrag 120 € im Jahr, Startbonus 200 € bei Beginn vor dem 25. Geburtstag. Stand 10/2026.</p>
+    </footer>
+  </main>
+</div>
+
+<!-- Kapital immer im Blick, wenn das Ergebnis aus dem Bild gescrollt ist -->
+<div class="mini-leiste" id="mini-leiste" aria-hidden="true">
+  <span><span class="mini-label">Kapital mit <span data-out="rente">67</span></span> <b id="mini-kapital"></b></span>
+  <button type="button" id="mini-hoch" tabindex="-1" aria-label="Zum Ergebnis"><svg><use href="#i-pfeil-hoch"/></svg></button>
+</div>
+
+<button type="button" class="praesi-ende" id="praesi-ende"><svg aria-hidden="true"><use href="#i-x"/></svg>Präsentation beenden</button>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>

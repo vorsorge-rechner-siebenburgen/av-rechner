@@ -1,0 +1,9 @@
+{
+  "name": "av-rechner",
+  "private": true,
+  "type": "module",
+  "description": "Altersvorsorge-Rechner „Zeit × Geld × Zinseszins“ – statische Seite ohne Build-Schritt",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}
